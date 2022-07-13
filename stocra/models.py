@@ -46,6 +46,7 @@ class Input(BaseModel):
     amount: Optional[Amount] = None
     transaction_pointer: Optional[TransactionPointer] = None
 
+    @classmethod
     @root_validator
     def validate_address_or_pointer(cls, values: Dict) -> Dict:  # pylint: disable=no-self-argument
         if not (values["address"] or values["transaction_pointer"]):
@@ -80,6 +81,7 @@ class Block(BaseModel):
     timestamp_ms: int
     transactions: List[str] = []
 
+    @classmethod
     @validator("timestamp_ms")
     def validate_timestamp_ms(cls, value: int) -> int:  # pylint: disable=no-self-argument
         # I don't really care if this runs even after 2286

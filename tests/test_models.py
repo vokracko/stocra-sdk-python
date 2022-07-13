@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-from stocra.v1_0.models import Amount, Transaction
+from stocra.models import Amount, Transaction
 
 
 def test_amount_add() -> None:
