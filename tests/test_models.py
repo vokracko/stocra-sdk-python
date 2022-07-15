@@ -57,3 +57,9 @@ def test_amount_equal_wrong_type() -> None:
 def test_negative_fee() -> None:
     with pytest.raises(ValueError):
         Transaction(fee=Amount(value=Decimal("-1"), currency_symbol="BTC"))
+
+
+def test_extra_fields() -> None:
+    with_extra_field = Amount(value=Decimal("1"), currency_symbol="BTC", new_field="test")
+    without_extra_field = Amount(value=Decimal("1"), currency_symbol="BTC")
+    assert with_extra_field == without_extra_field
