@@ -92,7 +92,7 @@ async for block, transaction in stocra_client.stream_new_transactions(
     blockchain="ethereum", # str
     start_block_hash_or_height="latest", # Union[str, int] 
     sleep_interval_seconds=10 # float, interval to sleep if blockchain has no new blocks
-): # returns Iterator[Tuple[Block, Transaction]]
+): # returns AsyncIterator[Tuple[Block, Transaction]]
     print(block.height, transaction.hash)
 ```
 #### Stream new blocks:
@@ -101,7 +101,7 @@ async for block, transaction in stocra_client.stream_new_blocks(
     blockchain="ethereum", # str
     start_block_hash_or_height="latest", # Union[str, int] 
     sleep_interval_seconds=10 # float, interval to sleep if blockchain has no new blocks
-): # returns Iterator[Block]
+): # returns AsyncIterator[Block]
     print(block.height, transaction.hash)
 ```
 #### Get block
@@ -123,7 +123,7 @@ transaction = await stocra_client.get_transaction(
 transactions = stocra_client.get_all_transactions_of_block(
     blockchain="bitcoin", # str 
     block=block, # Block
-) # returns Iterable[Transaction]
+) # returns AsyncIterable[Transaction]
 async for transaction in transactions:
     print(transaction)
 ```
