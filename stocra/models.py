@@ -21,11 +21,11 @@ class Amount(BaseModel):
 
             return Amount(value=self.value + other.value, currency_symbol=self.currency_symbol)
 
-        raise ValueError(f"Cannot add Amount and {type(other)}")
+        raise TypeError(f"Cannot add Amount and {type(other)}")
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, Amount):
-            raise ValueError(f"Cannot compare Amount and {type(other)}")
+            raise TypeError(f"Cannot compare Amount and {type(other)}")
 
         if self.value != other.value:
             return False

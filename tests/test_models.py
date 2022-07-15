@@ -20,7 +20,7 @@ def test_amount_add_wrong_currency() -> None:
 
 def test_amount_add_wrong_type() -> None:
     first = Amount(value=Decimal("1"), currency_symbol="BTC")
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         first + Decimal("2")  # pylint:disable=expression-not-assigned
 
 
@@ -50,7 +50,7 @@ def test_amount_equal(first: Amount, second: Amount, expected_result: bool) -> N
 
 
 def test_amount_equal_wrong_type() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Amount(value=Decimal("1"), currency_symbol="BTC") == Decimal("1")  # pylint:disable=expression-not-assigned
 
 
