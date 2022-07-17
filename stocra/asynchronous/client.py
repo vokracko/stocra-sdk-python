@@ -7,9 +7,8 @@ from typing import AsyncIterable, List, Optional, Tuple, Union
 from aiohttp import ClientError, ClientResponseError, ClientSession, ClientTimeout
 
 from stocra.asynchronous.error_handlers import DEFAULT_ERROR_HANDLERS
-from stocra.asynchronous.retry_models import ErrorHandler, StocraRequestError
 from stocra.base_client import StocraBase
-from stocra.models import Block, Transaction
+from stocra.models import Block, ErrorHandler, StocraHTTPError, Transaction
 
 
 class Stocra(StocraBase):
@@ -24,13 +23,14 @@ class Stocra(StocraBase):
         connect_timeout: Optional[float] = None,
         read_timeout: Optional[float] = None,
         semaphore: Optional[Semaphore] = None,
-        retry_strategy: List[ErrorHandler] = DEFAULT_ERROR_HANDLERS,
+        error_handlers: Optional[List[ErrorHandler]] = DEFAULT_ERROR_HANDLERS,
     ):
         super().__init__(
             version=version,
             connect_timeout=connect_timeout,
             read_timeout=read_timeout,
             token=token,
+            error_handlers=error_handlers,
         )
         self._session = ClientSession(
             timeout=ClientTimeout(
@@ -39,7 +39,9 @@ class Stocra(StocraBase):
             ),
         )
         self._semaphore = semaphore
-        self._error_handlers = retry_strategy
+
+    async def close(self):
+        await self._session.close()
 
     async def _acquire(self) -> None:
         if self._semaphore:
@@ -69,11 +71,19 @@ class Stocra(StocraBase):
                 return await response.json()
             except ClientError as exception:
                 if self._error_handlers:
-                    error = StocraRequestError(endpoint=endpoint, iteration=iteration, exception=exception)
-                    for error_handler in self._error_handlers:
-                        retry = await error_handler(error)
-                        if retry:
-                            continue
+                    error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
+                    if await self._should_continue(error):
+                        continue
+
+                raise
+
+    async def _should_continue(self, error):
+        for error_handler in self._error_handlers:
+            retry = await error_handler(error)
+            if retry:
+                return True
+
+        return False
 
     async def get_block(self, blockchain: str, hash_or_height: Union[str, int] = "latest") -> Block:
         async with self.with_semaphore():

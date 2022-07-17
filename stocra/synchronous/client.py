@@ -1,13 +1,13 @@
 from concurrent.futures import Executor, as_completed
+from itertools import count
 from time import sleep
-from typing import Iterable, Optional, Tuple, Union
+from typing import Iterable, List, Optional, Tuple, Union
 
-from requests import HTTPError, Session
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+from requests import HTTPError, RequestException, Session
 
 from stocra.base_client import StocraBase
-from stocra.models import Block, Transaction
+from stocra.models import Block, ErrorHandler, StocraHTTPError, Transaction
+from stocra.synchronous.error_handlers import DEFAULT_ERROR_HANDLERS
 
 
 class Stocra(StocraBase):
@@ -21,28 +21,44 @@ class Stocra(StocraBase):
         connect_timeout: Optional[float] = None,
         read_timeout: Optional[float] = None,
         executor: Optional[Executor] = None,
-        retry_strategy: Retry = None,
+        error_handlers: Optional[List[ErrorHandler]] = DEFAULT_ERROR_HANDLERS,
     ):
         super().__init__(
             version=version,
             connect_timeout=connect_timeout,
             read_timeout=read_timeout,
             token=token,
+            error_handlers=error_handlers,
         )
-        adapter = HTTPAdapter(max_retries=retry_strategy or 0)
         self._session = Session()
-        self._session.mount("https://", adapter)
         self._executor = executor
 
     def _get(self, blockchain: str, endpoint: str) -> dict:
-        response = self._session.get(
-            f"https://{blockchain}.stocra.com/{self._version}/{endpoint}",
-            allow_redirects=False,
-            headers=self.headers,
-            timeout=(self._connect_timeout, self._read_timeout),
-        )
-        response.raise_for_status()
-        return response.json()
+        for iteration in count(start=1):
+            try:
+                response = self._session.get(
+                    f"https://{blockchain}.stocra.com/{self._version}/{endpoint}",
+                    allow_redirects=False,
+                    headers=self.headers,
+                    timeout=(self._connect_timeout, self._read_timeout),
+                )
+                response.raise_for_status()
+                return response.json()
+            except RequestException as exception:
+                if self._error_handlers:
+                    error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
+                    if self._should_continue(error):
+                        continue
+
+                raise
+
+    def _should_continue(self, error) -> bool:
+        for error_handler in self._error_handlers:
+            retry = error_handler(error)
+            if retry:
+                return True
+
+        return False
 
     def get_block(self, blockchain: str, hash_or_height: Union[str, int] = "latest") -> Block:
         block_json = self._get(blockchain=blockchain, endpoint=f"blocks/{hash_or_height}")
@@ -72,7 +88,6 @@ class Stocra(StocraBase):
     ) -> Iterable[Block]:
         block = self.get_block(blockchain=blockchain, hash_or_height=start_block_hash_or_height)
         latest_block_height = block.height
-
         yield block
 
         while True:

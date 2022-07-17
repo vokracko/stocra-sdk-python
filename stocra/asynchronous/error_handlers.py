@@ -2,11 +2,11 @@ import asyncio
 
 from aiohttp import ClientConnectionError, ClientResponseError
 
-from stocra.asynchronous.retry_models import StocraRequestError
+from stocra.models import StocraHTTPError
 from stocra.utils import calculate_sleep
 
 
-async def retry_on_service_unavailable(error: StocraRequestError) -> bool:
+async def retry_on_service_unavailable(error: StocraHTTPError) -> bool:
     if not isinstance(error.exception, ClientResponseError):
         return False
 
@@ -20,7 +20,7 @@ async def retry_on_service_unavailable(error: StocraRequestError) -> bool:
     return True
 
 
-async def retry_on_connection_error(error: StocraRequestError) -> bool:
+async def retry_on_connection_error(error: StocraHTTPError) -> bool:
     if not isinstance(error.exception, ClientConnectionError):
         return False
 
@@ -31,7 +31,7 @@ async def retry_on_connection_error(error: StocraRequestError) -> bool:
     return True
 
 
-async def retry_on_too_many_requests(error: StocraRequestError) -> bool:
+async def retry_on_too_many_requests(error: StocraHTTPError) -> bool:
     if not isinstance(error.exception, ClientResponseError):
         return False
 
@@ -46,7 +46,5 @@ async def retry_on_too_many_requests(error: StocraRequestError) -> bool:
 
 
 DEFAULT_ERROR_HANDLERS = [
-    retry_on_too_many_requests,
     retry_on_service_unavailable,
-    retry_on_connection_error,
 ]

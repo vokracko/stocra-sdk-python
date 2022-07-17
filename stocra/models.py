@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 
 from pydantic import BaseModel, root_validator, validator
 
@@ -89,3 +90,13 @@ class Block(BaseModel):
             raise ValueError("Timestamp must be in miliseconds")
 
         return value
+
+
+@dataclass(frozen=True)
+class StocraHTTPError:
+    endpoint: str
+    iteration: int
+    exception: Exception
+
+
+ErrorHandler = Callable[[StocraHTTPError], Union[bool, Awaitable[bool]]]

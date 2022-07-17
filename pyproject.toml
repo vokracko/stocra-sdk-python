@@ -20,6 +20,10 @@ pylint = "*"
 pytest = "*"
 aiohttp = "*"
 requests = "*"
+requests-mock = "*"
+pytest-asyncio = "*"
+aioresponses = "*"
+types-requests = "*"
 
 [tool.poetry.extras]
 sync = ["requests"]
