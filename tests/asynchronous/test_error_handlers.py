@@ -17,6 +17,7 @@ async def test_retry_on_service_unavailable() -> None:
         mocked.get(f"{BASE_URL}/blocks/{BLOCK_100.height}", body=BLOCK_100.json())
         block = await client.get_block("bitcoin", hash_or_height=BLOCK_100.height)
         assert block == BLOCK_100
+    await client.close()
 
 
 @pytest.mark.asyncio
@@ -27,3 +28,4 @@ async def test_retry_on_too_many_requests() -> None:
         mocked.get(f"{BASE_URL}/blocks/{BLOCK_100.height}", body=BLOCK_100.json())
         block = await client.get_block("bitcoin", hash_or_height=BLOCK_100.height)
         assert block == BLOCK_100
+    await client.close()

@@ -1,7 +1,7 @@
 from concurrent.futures import Executor, as_completed
 from itertools import count
 from time import sleep
-from typing import Iterable, List, Optional, Tuple, Union
+from typing import Iterable, List, Optional, Tuple, Union, cast
 
 from requests import HTTPError, RequestException, Session
 
@@ -33,7 +33,7 @@ class Stocra(StocraBase):
         self._session = Session()
         self._executor = executor
 
-    def _get(self, blockchain: str, endpoint: str) -> dict:
+    def _get(self, blockchain: str, endpoint: str) -> dict:  # type: ignore[return]
         for iteration in count(start=1):
             try:
                 response = self._session.get(
@@ -43,16 +43,18 @@ class Stocra(StocraBase):
                     timeout=(self._connect_timeout, self._read_timeout),
                 )
                 response.raise_for_status()
-                return response.json()
+                return cast(dict, response.json())
             except RequestException as exception:
-                if self._error_handlers:
-                    error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
-                    if self._should_continue(error):
-                        continue
+                error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
+                if self._should_continue(error):
+                    continue
 
                 raise
 
-    def _should_continue(self, error) -> bool:
+    def _should_continue(self, error: StocraHTTPError) -> bool:
+        if not self._error_handlers:
+            return False
+
         for error_handler in self._error_handlers:
             retry = error_handler(error)
             if retry:

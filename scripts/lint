@@ -6,5 +6,5 @@ CHECK=$1
 
 isort stocra tests ${CHECK}
 black stocra tests ${CHECK}
-pylint stocra tests
-mypy stocra tests
+pylint stocra
+mypy stocra

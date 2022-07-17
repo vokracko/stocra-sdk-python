@@ -1,2 +1,6 @@
+from typing import cast
+
+
 def calculate_sleep(backoff_factor: int) -> int:
-    return 1 * (2 ** (backoff_factor - 1))
+    sleep_length = 1 * (2 ** (backoff_factor - 1))
+    return cast(int, sleep_length)

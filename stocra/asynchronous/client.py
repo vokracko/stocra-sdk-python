@@ -2,7 +2,16 @@ import asyncio
 from asyncio import Semaphore
 from contextlib import asynccontextmanager
 from itertools import count
-from typing import AsyncIterable, List, Optional, Tuple, Union
+from typing import (
+    AsyncGenerator,
+    AsyncIterable,
+    Awaitable,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    cast,
+)
 
 from aiohttp import ClientError, ClientResponseError, ClientSession, ClientTimeout
 
@@ -40,7 +49,7 @@ class Stocra(StocraBase):
         )
         self._semaphore = semaphore
 
-    async def close(self):
+    async def close(self) -> None:
         await self._session.close()
 
     async def _acquire(self) -> None:
@@ -52,14 +61,14 @@ class Stocra(StocraBase):
             self._semaphore.release()
 
     @asynccontextmanager
-    async def with_semaphore(self):
+    async def with_semaphore(self) -> AsyncGenerator[None, None]:
         await self._acquire()
         try:
             yield
         finally:
             self._release()
 
-    async def _get(self, blockchain: str, endpoint: str) -> dict:
+    async def _get(self, blockchain: str, endpoint: str) -> dict:  # type: ignore[return]
         for iteration in count(start=1):
             try:
                 response = await self._session.get(
@@ -68,18 +77,20 @@ class Stocra(StocraBase):
                     allow_redirects=False,
                     headers=self.headers,
                 )
-                return await response.json()
+                return cast(dict, await response.json())
             except ClientError as exception:
-                if self._error_handlers:
-                    error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
-                    if await self._should_continue(error):
-                        continue
+                error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
+                if await self._should_continue(error):
+                    continue
 
                 raise
 
-    async def _should_continue(self, error):
+    async def _should_continue(self, error: StocraHTTPError) -> bool:
+        if not self._error_handlers:
+            return False
+
         for error_handler in self._error_handlers:
-            retry = await error_handler(error)
+            retry = await cast(Awaitable[bool], error_handler(error))
             if retry:
                 return True
 
