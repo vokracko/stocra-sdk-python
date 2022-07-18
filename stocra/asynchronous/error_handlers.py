@@ -43,8 +43,3 @@ async def retry_on_too_many_requests(error: StocraHTTPError) -> bool:
 
     await asyncio.sleep(int(error.exception.headers["Retry-After"]))
     return True
-
-
-DEFAULT_ERROR_HANDLERS = [
-    retry_on_service_unavailable,
-]

@@ -14,9 +14,8 @@ from typing import (
     cast,
 )
 
-from aiohttp import ClientError, ClientResponseError, ClientSession, ClientTimeout
+from aiohttp import ClientError, ClientResponseError, ClientSession
 
-from stocra.asynchronous.error_handlers import DEFAULT_ERROR_HANDLERS
 from stocra.base_client import StocraBase
 from stocra.models import Block, ErrorHandler, StocraHTTPError, Transaction
 
@@ -31,23 +30,16 @@ class Stocra(StocraBase):
     def __init__(
         self,
         token: Optional[str] = None,
-        connect_timeout: Optional[float] = None,
-        read_timeout: Optional[float] = None,
+        session: Optional[ClientSession] = None,
         semaphore: Optional[Semaphore] = None,
-        error_handlers: Optional[List[ErrorHandler]] = DEFAULT_ERROR_HANDLERS,
+        error_handlers: Optional[List[ErrorHandler]] = None,
     ):
         super().__init__(
-            connect_timeout=connect_timeout,
-            read_timeout=read_timeout,
             token=token,
             error_handlers=error_handlers,
         )
-        self._session = ClientSession(
-            timeout=ClientTimeout(
-                sock_connect=self._connect_timeout,
-                sock_read=self._read_timeout,
-            ),
-        )
+
+        self._session = session or ClientSession()
         self._semaphore = semaphore
 
     async def close(self) -> None:

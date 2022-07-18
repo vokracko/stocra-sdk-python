@@ -32,8 +32,3 @@ def retry_on_too_many_requests(error: StocraHTTPError) -> bool:
 
     sleep(int(error.exception.response.headers["Retry-After"]))
     return True
-
-
-DEFAULT_ERROR_HANDLERS = [
-    retry_on_service_unavailable,
-]

@@ -8,7 +8,6 @@ from requests import HTTPError, RequestException, Session
 
 from stocra.base_client import StocraBase
 from stocra.models import Block, ErrorHandler, StocraHTTPError, Transaction
-from stocra.synchronous.error_handlers import DEFAULT_ERROR_HANDLERS
 
 logger = logging.getLogger("stocra")
 
@@ -20,18 +19,15 @@ class Stocra(StocraBase):
     def __init__(
         self,
         token: Optional[str] = None,
-        connect_timeout: Optional[float] = None,
-        read_timeout: Optional[float] = None,
+        session: Optional[Session] = None,
         executor: Optional[Executor] = None,
-        error_handlers: Optional[List[ErrorHandler]] = DEFAULT_ERROR_HANDLERS,
+        error_handlers: Optional[List[ErrorHandler]] = None,
     ):
         super().__init__(
-            connect_timeout=connect_timeout,
-            read_timeout=read_timeout,
             token=token,
             error_handlers=error_handlers,
         )
-        self._session = Session()
+        self._session = session or Session()
         self._executor = executor
 
     def _get(self, blockchain: str, endpoint: str) -> dict:  # type: ignore[return]
