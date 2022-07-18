@@ -1,6 +1,14 @@
 # Stocra Python SDK
+- [Models](#models)
+- [Synchronous client](#synchronous-client)
+- [Asynchronous client](#asynchronous-client)
+- [Error handlers](#error-handlers)
 
-## Sync
+## Models:
+- [Transaction](https://github.com/stocra/sdk-python/blob/master/stocra/models.py#L64)
+- [Block](https://github.com/stocra/sdk-python/blob/master/stocra/models.py#L79)
+
+## Synchronous client
 ### Install
 ```bash
 pip install stocra[sync]
@@ -9,7 +17,6 @@ pip install stocra[sync]
 #### Instantiate client
 ```python
 from stocra.synchronous.client import Stocra
-# from concurrent.futures import ThreadPoolExecutor
 
 stocra_client = Stocra(
     token: str = "" ,
@@ -17,8 +24,8 @@ stocra_client = Stocra(
     read_timeout: Optional[float] = None,
     # ThreadPoolExecutor(N) if you want transactions obtained in N threads at the same time
     executor: Optional[Executor] = None, 
-    # Retry stragegy, useful for retrying on 503 or 429
-    retry_strategy: Retry = None,
+    # Errors handlers are executed when request fails
+    error_handlers: Optional[List[ErrorHandler]] = DEFAULT_ERROR_HANDLERS,
 )
 ```
 #### Stream new transactions:
@@ -27,17 +34,17 @@ for block, transaction in stocra_client.stream_new_transactions(
     blockchain="ethereum", # str
     start_block_hash_or_height="latest", # Union[str, int] 
     sleep_interval_seconds=10 # float, interval to sleep if blockchain has no new blocks
-): # returns Iterator[Tuple[Block, Transaction]]
+): # returns Iterable[Tuple[Block, Transaction]]
     print(block.height, transaction.hash)
 ```
 #### Stream new blocks:
 ```python
-for block, transaction in stocra_client.stream_new_blocks(
+for block in stocra_client.stream_new_blocks(
     blockchain="ethereum", # str
     start_block_hash_or_height="latest", # Union[str, int] 
     sleep_interval_seconds=10 # float, interval to sleep if blockchain has no new blocks
-): # returns Iterator[Block]
-    print(block.height, transaction.hash)
+): # returns Iterable[Block]
+    print(block)
 ```
 #### Get block
 ```python
@@ -62,26 +69,23 @@ transactions = stocra_client.get_all_transactions_of_block(
 for transaction in transactions:
     print(transaction)
 ```
-## Async
+## Asynchronous client
 ### Install
 ```bash
 pip install stocra[async]
 ```
 ### Usage
-## TODO fix this one
 #### Instantiate client
 ```python
 from stocra.asynchronous.client import Stocra
-# from concurrent.futures import ThreadPoolExecutor
 
 stocra_client = Stocra(
     token: str = "" ,
     connect_timeout: Optional[float] = None,
     read_timeout: Optional[float] = None,
-    # ThreadPoolExecutor(N) if you want transactions obtained in N threads at the same time
-    executor: Optional[Executor] = None, 
-    # Retry stragegy, useful for retrying on 503 or 429
-    retry_strategy: Retry = None,
+    # Limit number of requests made at the same time
+    semaphore: Optional[Semaphore] = None,
+    error_handlers: Optional[List[ErrorHandler]] = DEFAULT_ERROR_HANDLERS,
 )
 ```
 #### Stream new transactions:
@@ -90,17 +94,17 @@ async for block, transaction in stocra_client.stream_new_transactions(
     blockchain="ethereum", # str
     start_block_hash_or_height="latest", # Union[str, int] 
     sleep_interval_seconds=10 # float, interval to sleep if blockchain has no new blocks
-): # returns AsyncIterator[Tuple[Block, Transaction]]
+): # returns AsyncIterable[Tuple[Block, Transaction]]
     print(block.height, transaction.hash)
 ```
 #### Stream new blocks:
 ```python
-async for block, transaction in stocra_client.stream_new_blocks(
+async for block in stocra_client.stream_new_blocks(
     blockchain="ethereum", # str
     start_block_hash_or_height="latest", # Union[str, int] 
     sleep_interval_seconds=10 # float, interval to sleep if blockchain has no new blocks
-): # returns AsyncIterator[Block]
-    print(block.height, transaction.hash)
+): # returns AsyncIterable[Block]
+    print(block)
 ```
 #### Get block
 ```python
@@ -125,6 +129,10 @@ transactions = stocra_client.get_all_transactions_of_block(
 async for transaction in transactions:
     print(transaction)
 ```
-## TODO
-- [ ] describe usage of retry strategy
-- [ ] describe usage of semaphores
+## Error handlers
+- error handlers are functions that are called after a request fails
+- signature: `ErrorHandler = Callable[[StocraHTTPError], Union[bool, Awaitable[bool]]]`
+- [StocraHTTPError](https://github.com/stocra/sdk-python/blob/master/stocra/models.py#L96) model
+- returned value indicates whether request should be repeated or exception raised
+- examples of synchronous error handlers: [stocra.synchronous.error_handlers](https://github.com/stocra/sdk-python/blob/master/stocra/synchronous/error_handlers.py)
+- examples of asynchronous error handlers: [stocra.asynchronous.error_handlers](https://github.com/stocra/sdk-python/blob/master/stocra/asynchronous/error_handlers.py)
