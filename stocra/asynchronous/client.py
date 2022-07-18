@@ -62,7 +62,7 @@ class Stocra(StocraBase):
             self._semaphore.release()
 
     @asynccontextmanager
-    async def with_semaphore(self) -> AsyncGenerator[None, None]:
+    async def _with_semaphore(self) -> AsyncGenerator[None, None]:
         await self._acquire()
         try:
             yield
@@ -99,13 +99,13 @@ class Stocra(StocraBase):
 
     async def get_block(self, blockchain: str, hash_or_height: Union[str, int] = "latest") -> Block:
         logger.debug("%s: get_block %s", blockchain, hash_or_height)
-        async with self.with_semaphore():
+        async with self._with_semaphore():
             block_json = await self._get(blockchain=blockchain, endpoint=f"blocks/{hash_or_height}")
             return Block(**block_json)
 
     async def get_transaction(self, blockchain: str, transaction_hash: str) -> Transaction:
         logger.debug("%s: get_transaction %s", blockchain, transaction_hash)
-        async with self.with_semaphore():
+        async with self._with_semaphore():
             transaction_json = await self._get(blockchain=blockchain, endpoint=f"transactions/{transaction_hash}")
             return Transaction(**transaction_json)
 
