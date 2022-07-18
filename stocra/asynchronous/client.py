@@ -45,50 +45,6 @@ class Stocra(StocraBase):
     async def close(self) -> None:
         await self._session.close()
 
-    async def _acquire(self) -> None:
-        if self._semaphore:
-            await self._semaphore.acquire()
-
-    def _release(self) -> None:
-        if self._semaphore:
-            self._semaphore.release()
-
-    @asynccontextmanager
-    async def _with_semaphore(self) -> AsyncGenerator[None, None]:
-        await self._acquire()
-        try:
-            yield
-        finally:
-            self._release()
-
-    async def _get(self, blockchain: str, endpoint: str) -> dict:  # type: ignore[return]
-        for iteration in count(start=1):
-            try:
-                response = await self._session.get(
-                    f"https://{blockchain}.stocra.com/v1.0/{endpoint}",
-                    raise_for_status=True,
-                    allow_redirects=False,
-                    headers=self.headers,
-                )
-                return cast(dict, await response.json())
-            except ClientError as exception:
-                error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
-                if await self._should_continue(error):
-                    continue
-
-                raise
-
-    async def _should_continue(self, error: StocraHTTPError) -> bool:
-        if not self._error_handlers:
-            return False
-
-        for error_handler in self._error_handlers:
-            retry = await cast(Awaitable[bool], error_handler(error))
-            if retry:
-                return True
-
-        return False
-
     async def get_block(self, blockchain: str, hash_or_height: Union[str, int] = "latest") -> Block:
         logger.debug("%s: get_block %s", blockchain, hash_or_height)
         async with self._with_semaphore():
@@ -171,3 +127,47 @@ class Stocra(StocraBase):
             block_transactions = self.get_all_transactions_of_block(blockchain=blockchain, block=block)
             async for transaction in block_transactions:
                 yield block, transaction
+
+    async def _acquire(self) -> None:
+        if self._semaphore:
+            await self._semaphore.acquire()
+
+    def _release(self) -> None:
+        if self._semaphore:
+            self._semaphore.release()
+
+    @asynccontextmanager
+    async def _with_semaphore(self) -> AsyncGenerator[None, None]:
+        await self._acquire()
+        try:
+            yield
+        finally:
+            self._release()
+
+    async def _get(self, blockchain: str, endpoint: str) -> dict:  # type: ignore[return]
+        for iteration in count(start=1):
+            try:
+                response = await self._session.get(
+                    f"https://{blockchain}.stocra.com/v1.0/{endpoint}",
+                    raise_for_status=True,
+                    allow_redirects=False,
+                    headers=self.headers,
+                )
+                return cast(dict, await response.json())
+            except ClientError as exception:
+                error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
+                if await self._should_continue(error):
+                    continue
+
+                raise
+
+    async def _should_continue(self, error: StocraHTTPError) -> bool:
+        if not self._error_handlers:
+            return False
+
+        for error_handler in self._error_handlers:
+            retry = await cast(Awaitable[bool], error_handler(error))
+            if retry:
+                return True
+
+        return False

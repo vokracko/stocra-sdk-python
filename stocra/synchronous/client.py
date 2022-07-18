@@ -30,35 +30,6 @@ class Stocra(StocraBase):
         self._session = session or Session()
         self._executor = executor
 
-    def _get(self, blockchain: str, endpoint: str) -> dict:  # type: ignore[return]
-        for iteration in count(start=1):
-            try:
-                response = self._session.get(
-                    f"https://{blockchain}.stocra.com/v1.0/{endpoint}",
-                    allow_redirects=False,
-                    headers=self.headers,
-                    timeout=(self._connect_timeout, self._read_timeout),
-                )
-                response.raise_for_status()
-                return cast(dict, response.json())
-            except RequestException as exception:
-                error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
-                if self._should_continue(error):
-                    continue
-
-                raise
-
-    def _should_continue(self, error: StocraHTTPError) -> bool:
-        if not self._error_handlers:
-            return False
-
-        for error_handler in self._error_handlers:
-            retry = error_handler(error)
-            if retry:
-                return True
-
-        return False
-
     def get_block(self, blockchain: str, hash_or_height: Union[str, int] = "latest") -> Block:
         logger.debug("%s: get_block %s", blockchain, hash_or_height)
         block_json = self._get(blockchain=blockchain, endpoint=f"blocks/{hash_or_height}")
@@ -89,27 +60,62 @@ class Stocra(StocraBase):
         sleep_interval_seconds: float = 10,
     ) -> Iterable[Block]:
         block = self.get_block(blockchain=blockchain, hash_or_height=start_block_hash_or_height)
-        latest_block_height = block.height
+        next_block_height = block.height + 1
         yield block
 
         while True:
             try:
-                block = self.get_block(blockchain=blockchain, hash_or_height=latest_block_height + 1)
+                block = self.get_block(blockchain=blockchain, hash_or_height=next_block_height)
             except HTTPError as exception:
                 if exception.response.status_code == 404:
-                    logger.debug(
-                        "%s: stream_new_blocks %s: 404, sleeping for %d seconds",
-                        blockchain,
-                        latest_block_height + 1,
-                        sleep_interval_seconds,
-                    )
-                    sleep(sleep_interval_seconds)
+                    self._handle_404_during_block_streaming(blockchain, next_block_height, sleep_interval_seconds)
                     continue
 
                 raise
 
-            latest_block_height = block.height
+            next_block_height += 1
             yield block
+
+    def stream_new_blocks_ahead(
+        self,
+        blockchain: str,
+        start_block_hash_or_height: Union[int, str] = "latest",
+        sleep_interval_seconds: float = 10,
+        n_blocks_ahead: int = 10,
+    ) -> Iterable[Block]:
+        if not self._executor:
+            raise Exception("Works only with executor")
+
+        if n_blocks_ahead < 1:
+            raise ValueError(f"`n_blocks_ahead` must be greater than 0. Got `{n_blocks_ahead}`")
+
+        block = self.get_block(blockchain=blockchain, hash_or_height=start_block_hash_or_height)
+        next_block_height = block.height + 1
+        last_block_height = next_block_height + n_blocks_ahead + 1
+        yield block
+
+        block_tasks = [
+            self._executor.submit(self.get_block, blockchain, height)
+            for height in range(next_block_height, last_block_height)
+        ]
+
+        while True:
+            block_task = block_tasks.pop(0)
+            try:
+                yield block_task.result()
+            except HTTPError as exception:
+                if exception.response.status_code == 404:
+                    self._handle_404_during_block_streaming(blockchain, next_block_height, sleep_interval_seconds)
+                    block_tasks.insert(
+                        0, self._executor.submit(self.get_block, blockchain, next_block_height, sleep_interval_seconds)
+                    )
+                    continue
+
+                raise
+
+            block_tasks.append(self._executor.submit(self.get_block, blockchain, last_block_height))
+            next_block_height += 1
+            last_block_height += 1
 
     def stream_new_transactions(
         self,
@@ -127,47 +133,40 @@ class Stocra(StocraBase):
             for transaction in block_transactions:
                 yield block, transaction
 
-    def stream_new_blocks_ahead(
-        self,
-        blockchain: str,
-        start_block_hash_or_height: Union[int, str] = "latest",
-        sleep_interval_seconds: float = 10,
-        n_blocks_ahead: int = 10,
-    ) -> Iterable[Block]:
-        if not self._executor:
-            raise Exception("Works only with executor")
-
-        if n_blocks_ahead < 1:
-            raise ValueError(f"`n_blocks_ahead` must be greater than 0. Got `{n_blocks_ahead}`")
-
-        block = self.get_block(blockchain=blockchain, hash_or_height=start_block_hash_or_height)
-        first_block_to_load_height = block.height + 1
-        last_block_to_load_height = first_block_to_load_height + n_blocks_ahead + 1
-        yield block
-
-        block_tasks = [
-            self._executor.submit(self.get_block, blockchain, height)
-            for height in range(first_block_to_load_height, last_block_to_load_height)
-        ]
-
-        while True:
-            block_task = block_tasks.pop(0)
+    def _get(self, blockchain: str, endpoint: str) -> dict:  # type: ignore[return]
+        for iteration in count(start=1):
             try:
-                yield block_task.result()
-            except HTTPError as exception:
-                if exception.response.status_code == 404:
-                    logger.debug(
-                        "%s: stream_new_blocks_ahead %s: 404, sleeping for %d seconds",
-                        blockchain,
-                        first_block_to_load_height,
-                        sleep_interval_seconds,
-                    )
-                    sleep(sleep_interval_seconds)
-                    block_tasks.insert(0, self._executor.submit(self.get_block, blockchain, first_block_to_load_height))
+                response = self._session.get(
+                    f"https://{blockchain}.stocra.com/v1.0/{endpoint}",
+                    allow_redirects=False,
+                    headers=self.headers,
+                )
+                response.raise_for_status()
+                return cast(dict, response.json())
+            except RequestException as exception:
+                error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
+                if self._should_continue(error):
                     continue
 
                 raise
 
-            block_tasks.append(self._executor.submit(self.get_block, blockchain, last_block_to_load_height))
-            first_block_to_load_height += 1
-            last_block_to_load_height += 1
+    def _should_continue(self, error: StocraHTTPError) -> bool:
+        if not self._error_handlers:
+            return False
+
+        for error_handler in self._error_handlers:
+            retry = error_handler(error)
+            if retry:
+                return True
+
+        return False
+
+    @classmethod
+    def _handle_404_during_block_streaming(cls, blockchain, block_height, sleep_interval_seconds):
+        logger.debug(
+            "%s: stream_new_blocks %s: 404, sleeping for %d seconds",
+            blockchain,
+            block_height,
+            sleep_interval_seconds,
+        )
+        sleep(sleep_interval_seconds)

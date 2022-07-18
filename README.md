@@ -74,9 +74,11 @@ async for transaction in transactions:
     print(transaction)
 ```
 ## Error handlers
-- error handlers are functions that are called after a request fails
-- signature: `ErrorHandler = Callable[[StocraHTTPError], Union[bool, Awaitable[bool]]]`
-- [StocraHTTPError](https://stocra.github.io/sdk-python/stocra/models.html#StocraHTTPError) model
+Error handlers are functions that are called after a request fails. 
+Error handling is completely up to you. There is no behaviour by default although there are two error handlers define for you already 
+- synchronous error handlers: [stocra.synchronous.error_handlers](https://stocra.github.io/sdk-python/stocra/synchronous/error_handlers.html)
+- of asynchronous error handlers: [stocra.asynchronous.error_handlers](https://stocra.github.io/sdk-python/stocra/asynchronous/error_handlers.html)
+
+signature: `ErrorHandler = Callable[[StocraHTTPError], Union[bool, Awaitable[bool]]]`
+[StocraHTTPError](https://stocra.github.io/sdk-python/stocra/models.html#StocraHTTPError) model
 - returned value indicates whether request should be repeated (`True`) or exception raised (`False)
-- examples of synchronous error handlers: [stocra.synchronous.error_handlers](https://stocra.github.io/sdk-python/stocra/synchronous/error_handlers.html)
-- examples of asynchronous error handlers: [stocra.asynchronous.error_handlers](https://stocra.github.io/sdk-python/stocra/asynchronous/error_handlers.html)
