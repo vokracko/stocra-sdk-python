@@ -11,6 +11,8 @@
 ### Install
 ```bash
 pip install stocra[synchronous]
+# or
+poetry add stocra --extras synchronous
 ```
 ### Usage
 ```python
@@ -65,6 +67,8 @@ for transaction in transactions:
 ### Install
 ```bash
 pip install stocra[asynchronous]
+# or
+poetry add stocra --extras asynchronous
 ```
 ### Usage
 ```python
