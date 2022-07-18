@@ -1,16 +1,19 @@
 [tool.poetry]
 name = "stocra"
-version = "1.0.0"
+version = "0.1.2"
 description = "Stocra.com python sdk"
 authors = ["Lukáš Vokráčko <lukas@vokracko.cz>"]
 license = "MIT"
 repository = "https://github.com/stocra/sdk-python"
 readme = "README.md"
 homepage = "https://stocra.com"
+include = ["stocra/py.typed"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
 pydantic = "*"
+requests = { version = "*", optional = true}
+aiohttp = { version = "*", optional = true}
 
 [tool.poetry.dev-dependencies]
 isort = "*"

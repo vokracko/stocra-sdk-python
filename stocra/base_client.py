@@ -17,7 +17,6 @@ class StocraBase(abc.ABC):
         token: Optional[str] = None,
         error_handlers: Optional[List[ErrorHandler]] = None,
     ) -> None:
-        self._version = version
         self._token = token
         self._connect_timeout = connect_timeout
         self._read_timeout = read_timeout
