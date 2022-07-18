@@ -3,15 +3,15 @@ from concurrent.futures import Executor, as_completed
 from itertools import count
 from time import sleep
 from typing import Iterable, List, Optional, Tuple, Union, cast
-import logging
+
 from requests import HTTPError, RequestException, Session
 
 from stocra.base_client import StocraBase
 from stocra.models import Block, ErrorHandler, StocraHTTPError, Transaction
 from stocra.synchronous.error_handlers import DEFAULT_ERROR_HANDLERS
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("stocra")
+
 
 class Stocra(StocraBase):
     _session: Session
@@ -101,7 +101,12 @@ class Stocra(StocraBase):
                 block = self.get_block(blockchain=blockchain, hash_or_height=latest_block_height + 1)
             except HTTPError as exception:
                 if exception.response.status_code == 404:
-                    logger.debug("%s: stream_new_blocks %s: 404, sleeping for %d seconds", blockchain, latest_block_height + 1, sleep_interval_seconds)
+                    logger.debug(
+                        "%s: stream_new_blocks %s: 404, sleeping for %d seconds",
+                        blockchain,
+                        latest_block_height + 1,
+                        sleep_interval_seconds,
+                    )
                     sleep(sleep_interval_seconds)
                     continue
 
@@ -140,15 +145,13 @@ class Stocra(StocraBase):
             raise ValueError(f"`n_blocks_ahead` must be greater than 0. Got `{n_blocks_ahead}`")
 
         block = self.get_block(blockchain=blockchain, hash_or_height=start_block_hash_or_height)
-        latest_block_height = block.height
-        new_block_height = latest_block_height + 1
-        last_block_height = latest_block_height + n_blocks_ahead + 2
+        first_block_to_load_height = block.height + 1
+        last_block_to_load_height = first_block_to_load_height + n_blocks_ahead + 1
         yield block
 
         block_tasks = [
             self._executor.submit(self.get_block, blockchain, height)
-            for height
-            in range(new_block_height, last_block_height)
+            for height in range(first_block_to_load_height, last_block_to_load_height)
         ]
 
         while True:
@@ -157,14 +160,18 @@ class Stocra(StocraBase):
                 yield block_task.result()
             except HTTPError as exception:
                 if exception.response.status_code == 404:
-                    logger.debug("%s: stream_new_blocks_ahead %s: 404, sleeping for %d seconds", blockchain,
-                                 new_block_height, sleep_interval_seconds)
+                    logger.debug(
+                        "%s: stream_new_blocks_ahead %s: 404, sleeping for %d seconds",
+                        blockchain,
+                        first_block_to_load_height,
+                        sleep_interval_seconds,
+                    )
                     sleep(sleep_interval_seconds)
-                    block_tasks.insert(0, self._executor.submit(self.get_block, blockchain, new_block_height))
+                    block_tasks.insert(0, self._executor.submit(self.get_block, blockchain, first_block_to_load_height))
                     continue
 
                 raise
 
-            block_tasks.append(self._executor.submit(self.get_block, blockchain, last_block_height))
-            new_block_height += 1
-            last_block_height += 1
+            block_tasks.append(self._executor.submit(self.get_block, blockchain, last_block_to_load_height))
+            first_block_to_load_height += 1
+            last_block_to_load_height += 1

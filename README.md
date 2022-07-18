@@ -18,6 +18,10 @@ pip install stocra[synchronous]
 for block in stocra_client.stream_new_blocks(blockchain="ethereum"):
     print(block)
 
+# stream new blocks, load new blocks in the background for faster processing. Work only with executor
+for block in stocra_client.stream_new_blocks_ahead(blockchain="ethereum"):
+    print(block)
+    
 # stream new transactions
 for block, transaction in stocra_client.stream_new_transactions(blockchain="ethereum"):
     print(block.height, transaction.hash)
@@ -48,8 +52,8 @@ pip install stocra[asynchronous]
 async for block, transaction in stocra_client.stream_new_transactions(blockchain="ethereum"):
     print(block.height, transaction.hash)
 
-# stream new blocks
-async for block in stocra_client.stream_new_blocks(blockchain="ethereum"):
+# stream new blocks, load 5 blocks in the background
+async for block in stocra_client.stream_new_blocks(blockchain="ethereum", n_blocks_ahead=5):
     print(block)
 
 # get one block
