@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+pdoc stocra -o docs/
