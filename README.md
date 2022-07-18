@@ -24,20 +24,21 @@ adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
 session = Session()
 session.mount('https://', adapter)
 stocra_client = Stocra(
-    token="<token>", 
-    session=session,
-    executor=ThreadPoolExecutor(),
-    error_handlers=[
+    token="<token>", # optional
+    session=session, # optional
+    executor=ThreadPoolExecutor(), # optional
+    error_handlers=[ 
         retry_on_service_unavailable,
         retry_on_too_many_requests,
-    ]
+    ] # optional
 )
 
 # stream new blocks
 for block in stocra_client.stream_new_blocks(blockchain="ethereum"):
     print(block)
 
-# stream new blocks, load new blocks in the background for faster processing. Works only with executor
+# stream new blocks, load new blocks in the background for faster processing. 
+# Works only if executor was provided during instantiation.
 for block in stocra_client.stream_new_blocks_ahead(blockchain="ethereum"):
     print(block)
     
@@ -74,13 +75,13 @@ from stocra.asynchronous.error_handlers import retry_on_too_many_requests, retry
 
 session = ClientSession()
 stocra_client = Stocra(
-    token="<token>", 
-    session=session,
-    semaphore=Semaphore(50),
+    token="<token>", # optional
+    session=session, # optional
+    semaphore=Semaphore(50), # optional
     error_handlers=[
         retry_on_service_unavailable,
         retry_on_too_many_requests,
-    ]
+    ] # optional
 )
 # stream new transactions
 async for block, transaction in stocra_client.stream_new_transactions(blockchain="ethereum"):
@@ -109,10 +110,11 @@ async for transaction in transactions:
 ```
 ## Error handlers
 Error handlers are functions that are called after a request fails. 
-Error handling is completely up to you. There is no behaviour by default although there are two error handlers define for you already 
+They receive single argument, [StocraHTTPError](https://stocra.github.io/sdk-python/stocra/models.html#StocraHTTPError) 
+and return boolean indicating whether to retry request (`True`) or raise (`False`).
+
+Error handler signature: `ErrorHandler = Callable[[StocraHTTPError], Union[bool, Awaitable[bool]]]`
+
+No errors handlers are used by default although there are two already defined for both sync and async version: 
 - synchronous error handlers: [stocra.synchronous.error_handlers](https://stocra.github.io/sdk-python/stocra/synchronous/error_handlers.html)
 - of asynchronous error handlers: [stocra.asynchronous.error_handlers](https://stocra.github.io/sdk-python/stocra/asynchronous/error_handlers.html)
-
-signature: `ErrorHandler = Callable[[StocraHTTPError], Union[bool, Awaitable[bool]]]`
-[StocraHTTPError](https://stocra.github.io/sdk-python/stocra/models.html#StocraHTTPError) model
-- returned value indicates whether request should be repeated (`True`) or exception raised (`False)
