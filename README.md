@@ -91,7 +91,8 @@ stocra_client = Stocra(
 async for block, transaction in stocra_client.stream_new_transactions(blockchain="ethereum"):
     print(block.height, transaction.hash)
 
-# stream new blocks, load 5 blocks in the background
+# stream new blocks and always load next 5 blocks in the background.
+# useful when you need to parse multiple blocks in short time span
 async for block in stocra_client.stream_new_blocks(blockchain="ethereum", n_blocks_ahead=5):
     print(block)
 
