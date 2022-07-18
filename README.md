@@ -11,7 +11,7 @@
 ## Synchronous client
 ### Install
 ```bash
-pip install stocra[sync]
+pip install stocra[synchronous]
 ```
 ### Usage
 #### Instantiate client
@@ -72,7 +72,7 @@ for transaction in transactions:
 ## Asynchronous client
 ### Install
 ```bash
-pip install stocra[async]
+pip install stocra[asynchronous]
 ```
 ### Usage
 #### Instantiate client

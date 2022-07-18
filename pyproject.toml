@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "stocra"
-version = "0.1.2"
+version = "0.1.4"
 description = "Stocra.com python sdk"
 authors = ["Lukáš Vokráčko <lukas@vokracko.cz>"]
 license = "MIT"
@@ -27,8 +27,8 @@ aioresponses = "*"
 types-requests = "*"
 
 [tool.poetry.extras]
-sync = ["requests"]
-async = ["aiohttp"]
+synchronous = ["requests"]
+asynchronous = ["aiohttp"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
