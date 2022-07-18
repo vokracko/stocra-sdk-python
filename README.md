@@ -14,11 +14,30 @@ pip install stocra[synchronous]
 ```
 ### Usage
 ```python
+from concurrent.futures import ThreadPoolExecutor
+from requests import Session
+from requests.adapters import HTTPAdapter
+from stocra.synchronous.client import Stocra
+from stocra.synchronous.error_handlers import retry_on_too_many_requests, retry_on_service_unavailable
+
+adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
+session = Session()
+session.mount('https://', adapter)
+stocra_client = Stocra(
+    token="<token>", 
+    session=session,
+    executor=ThreadPoolExecutor(),
+    error_handlers=[
+        retry_on_service_unavailable,
+        retry_on_too_many_requests,
+    ]
+)
+
 # stream new blocks
 for block in stocra_client.stream_new_blocks(blockchain="ethereum"):
     print(block)
 
-# stream new blocks, load new blocks in the background for faster processing. Work only with executor
+# stream new blocks, load new blocks in the background for faster processing. Works only with executor
 for block in stocra_client.stream_new_blocks_ahead(blockchain="ethereum"):
     print(block)
     
@@ -48,6 +67,21 @@ pip install stocra[asynchronous]
 ```
 ### Usage
 ```python
+from asyncio import Semaphore
+from aiohttp import ClientSession
+from stocra.asynchronous.client import Stocra
+from stocra.asynchronous.error_handlers import retry_on_too_many_requests, retry_on_service_unavailable
+
+session = ClientSession()
+stocra_client = Stocra(
+    token="<token>", 
+    session=session,
+    semaphore=Semaphore(50),
+    error_handlers=[
+        retry_on_service_unavailable,
+        retry_on_too_many_requests,
+    ]
+)
 # stream new transactions
 async for block, transaction in stocra_client.stream_new_transactions(blockchain="ethereum"):
     print(block.height, transaction.hash)
