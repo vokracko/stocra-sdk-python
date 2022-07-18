@@ -5,7 +5,6 @@ from stocra.models import ErrorHandler
 
 
 class StocraBase(abc.ABC):
-    _version: str
     _token: Optional[str] = None
     _connect_timeout: Optional[float] = None
     _read_timeout: Optional[float] = None
@@ -13,7 +12,6 @@ class StocraBase(abc.ABC):
 
     def __init__(
         self,
-        version: str = "v1.0",
         connect_timeout: Optional[float] = None,
         read_timeout: Optional[float] = None,
         token: Optional[str] = None,

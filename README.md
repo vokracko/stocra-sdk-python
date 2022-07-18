@@ -12,7 +12,6 @@ from stocra.synchronous.client import Stocra
 # from concurrent.futures import ThreadPoolExecutor
 
 stocra_client = Stocra(
-    version: str = "v1.0",
     token: str = "" ,
     connect_timeout: Optional[float] = None,
     read_timeout: Optional[float] = None,
@@ -76,7 +75,6 @@ from stocra.asynchronous.client import Stocra
 # from concurrent.futures import ThreadPoolExecutor
 
 stocra_client = Stocra(
-    version: str = "v1.0",
     token: str = "" ,
     connect_timeout: Optional[float] = None,
     read_timeout: Optional[float] = None,

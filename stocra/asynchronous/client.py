@@ -27,7 +27,6 @@ class Stocra(StocraBase):
 
     def __init__(
         self,
-        version: str = "v1.0",
         token: Optional[str] = None,
         connect_timeout: Optional[float] = None,
         read_timeout: Optional[float] = None,
@@ -35,7 +34,6 @@ class Stocra(StocraBase):
         error_handlers: Optional[List[ErrorHandler]] = DEFAULT_ERROR_HANDLERS,
     ):
         super().__init__(
-            version=version,
             connect_timeout=connect_timeout,
             read_timeout=read_timeout,
             token=token,
@@ -72,7 +70,7 @@ class Stocra(StocraBase):
         for iteration in count(start=1):
             try:
                 response = await self._session.get(
-                    f"https://{blockchain}.stocra.com/{self._version}/{endpoint}",
+                    f"https://{blockchain}.stocra.com/v1.0/{endpoint}",
                     raise_for_status=True,
                     allow_redirects=False,
                     headers=self.headers,
