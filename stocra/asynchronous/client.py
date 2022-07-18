@@ -66,8 +66,7 @@ class Stocra(StocraBase):
             transaction_tasks.append(task)
 
         for completed_task in asyncio.as_completed(transaction_tasks):
-            task = await completed_task
-            yield task
+            yield await completed_task
 
     async def stream_new_blocks(
         self,

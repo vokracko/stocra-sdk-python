@@ -106,9 +106,7 @@ class Stocra(StocraBase):
             except HTTPError as exception:
                 if exception.response.status_code == 404:
                     self._handle_404_during_block_streaming(blockchain, next_block_height, sleep_interval_seconds)
-                    block_tasks.insert(
-                        0, self._executor.submit(self.get_block, blockchain, next_block_height, sleep_interval_seconds)
-                    )
+                    block_tasks.insert(0, self._executor.submit(self.get_block, blockchain, next_block_height))
                     continue
 
                 raise
@@ -162,7 +160,9 @@ class Stocra(StocraBase):
         return False
 
     @classmethod
-    def _handle_404_during_block_streaming(cls, blockchain, block_height, sleep_interval_seconds):
+    def _handle_404_during_block_streaming(
+        cls, blockchain: str, block_height: int, sleep_interval_seconds: float
+    ) -> None:
         logger.debug(
             "%s: stream_new_blocks %s: 404, sleeping for %d seconds",
             blockchain,
