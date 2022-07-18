@@ -1,12 +1,9 @@
 # Stocra Python SDK
-- [Models](#models)
-- [Synchronous client](#synchronous-client)
-- [Asynchronous client](#asynchronous-client)
+- [Api documentation](https://stocra.github.io/sdk-python/)
+  - [Models](https://stocra.github.io/sdk-python/stocra/models.html)
+- [Using synchronous client](#synchronous-client)
+- [Using asynchronous client](#asynchronous-client)
 - [Error handlers](#error-handlers)
-
-## Models:
-- [Transaction](https://github.com/stocra/sdk-python/blob/master/stocra/models.py#L64)
-- [Block](https://github.com/stocra/sdk-python/blob/master/stocra/models.py#L79)
 
 ## Synchronous client
 ### Install

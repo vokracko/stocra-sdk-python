@@ -1,14 +1,17 @@
+import logging
 from concurrent.futures import Executor, as_completed
 from itertools import count
 from time import sleep
 from typing import Iterable, List, Optional, Tuple, Union, cast
-
+import logging
 from requests import HTTPError, RequestException, Session
 
 from stocra.base_client import StocraBase
 from stocra.models import Block, ErrorHandler, StocraHTTPError, Transaction
 from stocra.synchronous.error_handlers import DEFAULT_ERROR_HANDLERS
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("stocra")
 
 class Stocra(StocraBase):
     _session: Session
@@ -61,14 +64,17 @@ class Stocra(StocraBase):
         return False
 
     def get_block(self, blockchain: str, hash_or_height: Union[str, int] = "latest") -> Block:
+        logger.debug("%s: get_block %s", blockchain, hash_or_height)
         block_json = self._get(blockchain=blockchain, endpoint=f"blocks/{hash_or_height}")
         return Block(**block_json)
 
     def get_transaction(self, blockchain: str, transaction_hash: str) -> Transaction:
+        logger.debug("%s: get_transaction %s", blockchain, transaction_hash)
         transaction_json = self._get(blockchain=blockchain, endpoint=f"transactions/{transaction_hash}")
         return Transaction(**transaction_json)
 
     def get_all_transactions_of_block(self, blockchain: str, block: Block) -> Iterable[Transaction]:
+        logger.debug("%s: get_all_transactions %s", blockchain, block.height)
         if self._executor:
             futures = [
                 self._executor.submit(self.get_transaction, blockchain, transaction_hash)
@@ -95,6 +101,7 @@ class Stocra(StocraBase):
                 block = self.get_block(blockchain=blockchain, hash_or_height=latest_block_height + 1)
             except HTTPError as exception:
                 if exception.response.status_code == 404:
+                    logger.debug("%s: stream_new_blocks %s: 404, sleeping for %d seconds", blockchain, latest_block_height + 1, sleep_interval_seconds)
                     sleep(sleep_interval_seconds)
                     continue
 
@@ -118,3 +125,46 @@ class Stocra(StocraBase):
             block_transactions = self.get_all_transactions_of_block(blockchain=blockchain, block=block)
             for transaction in block_transactions:
                 yield block, transaction
+
+    def stream_new_blocks_ahead(
+        self,
+        blockchain: str,
+        start_block_hash_or_height: Union[int, str] = "latest",
+        sleep_interval_seconds: float = 10,
+        n_blocks_ahead: int = 10,
+    ) -> Iterable[Block]:
+        if not self._executor:
+            raise Exception("Works only with executor")
+
+        if n_blocks_ahead < 1:
+            raise ValueError(f"`n_blocks_ahead` must be greater than 0. Got `{n_blocks_ahead}`")
+
+        block = self.get_block(blockchain=blockchain, hash_or_height=start_block_hash_or_height)
+        latest_block_height = block.height
+        new_block_height = latest_block_height + 1
+        last_block_height = latest_block_height + n_blocks_ahead + 2
+        yield block
+
+        block_tasks = [
+            self._executor.submit(self.get_block, blockchain, height)
+            for height
+            in range(new_block_height, last_block_height)
+        ]
+
+        while True:
+            block_task = block_tasks.pop(0)
+            try:
+                yield block_task.result()
+            except HTTPError as exception:
+                if exception.response.status_code == 404:
+                    logger.debug("%s: stream_new_blocks_ahead %s: 404, sleeping for %d seconds", blockchain,
+                                 new_block_height, sleep_interval_seconds)
+                    sleep(sleep_interval_seconds)
+                    block_tasks.insert(0, self._executor.submit(self.get_block, blockchain, new_block_height))
+                    continue
+
+                raise
+
+            block_tasks.append(self._executor.submit(self.get_block, blockchain, last_block_height))
+            new_block_height += 1
+            last_block_height += 1
