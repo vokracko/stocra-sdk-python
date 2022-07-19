@@ -1,12 +1,13 @@
 import abc
-from typing import List, Optional
+from typing import Dict, List, Optional
 
-from stocra.models import ErrorHandler
+from stocra.models import ErrorHandler, Token
 
 
 class StocraBase(abc.ABC):
     _api_key: Optional[str] = None
     _error_handlers: Optional[List[ErrorHandler]] = None
+    _tokens: Dict[str, Dict[str, Token]] = dict()
 
     def __init__(
         self,

@@ -1,13 +1,14 @@
 import logging
 from concurrent.futures import Executor, as_completed
+from decimal import Decimal
 from itertools import count
 from time import sleep
-from typing import Iterable, List, Optional, Tuple, Union, cast
+from typing import Dict, Iterable, List, Optional, Tuple, Union, cast
 
 from requests import HTTPError, RequestException, Session
 
 from stocra.base_client import StocraBase
-from stocra.models import Block, ErrorHandler, StocraHTTPError, Transaction
+from stocra.models import Block, ErrorHandler, StocraHTTPError, Token, Transaction
 
 logger = logging.getLogger("stocra")
 
@@ -131,6 +132,16 @@ class Stocra(StocraBase):
             for transaction in block_transactions:
                 yield block, transaction
 
+    def get_tokens(self, blockchain: str) -> Dict[str, Token]:
+        if self._tokens.get(blockchain) is None:
+            self._refresh_tokens(blockchain)
+
+        return self._tokens[blockchain]
+
+    def scale_token_value(self, blockchain: str, contract_address: str, value: Decimal) -> Decimal:
+        token = self.get_tokens(blockchain)[contract_address]
+        return value * token.scaling
+
     def _get(self, blockchain: str, endpoint: str) -> dict:  # type: ignore[return]
         for iteration in count(start=1):
             try:
@@ -170,3 +181,7 @@ class Stocra(StocraBase):
             sleep_interval_seconds,
         )
         sleep(sleep_interval_seconds)
+
+    def _refresh_tokens(self, blockchain: str) -> None:
+        tokens = self._get(blockchain, "tokens")
+        self._tokens[blockchain] = {contract_address: Token(**token) for contract_address, token in tokens.items()}

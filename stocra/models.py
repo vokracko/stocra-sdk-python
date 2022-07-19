@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from decimal import Decimal
+from enum import Enum, unique
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 
 from pydantic import BaseModel, root_validator, validator
@@ -90,6 +91,25 @@ class Block(BaseModel):
             raise ValueError("Timestamp must be in miliseconds")
 
         return value
+
+
+class Currency(BaseModel):
+    symbol: str
+    name: str
+
+    class Config:
+        frozen = True
+
+
+@unique
+class TokenType(Enum):
+    ERC20 = "ERC20"
+
+
+class Token(BaseModel):
+    currency: Currency
+    scaling: Decimal
+    type: TokenType
 
 
 @dataclass(frozen=True)

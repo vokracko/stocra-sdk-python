@@ -1,4 +1,6 @@
+import json
 from asyncio import Semaphore
+from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +12,8 @@ from tests.fixtures import (
     BASE_URL,
     BLOCK_100,
     BLOCK_101,
+    TOKEN_CONTRACT_ADDRESS,
+    TOKEN_RESPONSE,
     TRANSACTION_BLOCK_100,
     TRANSACTION_BLOCK_101,
 )
@@ -93,3 +97,11 @@ async def test_stream_new_transactions(client: Stocra, default_responses) -> Non
     transactions = client.stream_new_transactions("bitcoin", start_block_hash_or_height=BLOCK_100.hash)
     assert await anext(transactions) == (BLOCK_100, TRANSACTION_BLOCK_100)
     assert await anext(transactions) == (BLOCK_101, TRANSACTION_BLOCK_101)
+
+
+@pytest.mark.asyncio
+async def test_scale_token_value(client: Stocra):
+    with aioresponses() as mocked:
+        mocked.get("https://ethereum.stocra.com/v1.0/tokens", body=json.dumps(TOKEN_RESPONSE))
+        value = await client.scale_token_value("ethereum", TOKEN_CONTRACT_ADDRESS, Decimal("325000000"))
+        assert value == Decimal("325")

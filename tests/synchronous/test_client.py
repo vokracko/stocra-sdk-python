@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from decimal import Decimal
 from unittest.mock import patch
 
 import pytest
@@ -9,6 +10,8 @@ from tests.fixtures import (
     BASE_URL,
     BLOCK_100,
     BLOCK_101,
+    TOKEN_CONTRACT_ADDRESS,
+    TOKEN_RESPONSE,
     TRANSACTION_BLOCK_100,
     TRANSACTION_BLOCK_101,
 )
@@ -80,3 +83,10 @@ def test_stream_new_transactions(client: Stocra, default_responses) -> None:
     transactions = client.stream_new_transactions("bitcoin", start_block_hash_or_height=BLOCK_100.hash)
     assert next(transactions) == (BLOCK_100, TRANSACTION_BLOCK_100)
     assert next(transactions) == (BLOCK_101, TRANSACTION_BLOCK_101)
+
+
+def test_scale_token_value(client: Stocra):
+    with requests_mock.Mocker(real_http=False) as mocked:
+        mocked.get("https://ethereum.stocra.com/v1.0/tokens", json=TOKEN_RESPONSE)
+        value = client.scale_token_value("ethereum", TOKEN_CONTRACT_ADDRESS, Decimal("325000000"))
+        assert value == Decimal("325")

@@ -1,7 +1,17 @@
+import json
 from datetime import datetime
 from decimal import Decimal
 
-from stocra.models import Amount, Block, Input, Output, Transaction
+from stocra.models import (
+    Amount,
+    Block,
+    Currency,
+    Input,
+    Output,
+    Token,
+    TokenType,
+    Transaction,
+)
 
 BASE_URL = "https://bitcoin.stocra.com/v1.0"
 TRANSACTION_BLOCK_100 = Transaction(
@@ -28,3 +38,7 @@ BLOCK_101 = Block(
     timestamp_ms=int(datetime.now().timestamp() * 1_000),
     transactions=[TRANSACTION_BLOCK_101.hash],
 )
+
+TOKEN_CONTRACT_ADDRESS = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+TOKEN = Token(currency=Currency(symbol="USDT", name="Tether"), scaling="0.000001", type=TokenType.ERC20)
+TOKEN_RESPONSE = {TOKEN_CONTRACT_ADDRESS: json.loads(TOKEN.json())}

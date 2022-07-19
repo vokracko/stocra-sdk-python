@@ -2,11 +2,13 @@ import asyncio
 import logging
 from asyncio import Semaphore
 from contextlib import asynccontextmanager
+from decimal import Decimal
 from itertools import count
 from typing import (
     AsyncGenerator,
     AsyncIterable,
     Awaitable,
+    Dict,
     List,
     Optional,
     Tuple,
@@ -17,7 +19,7 @@ from typing import (
 from aiohttp import ClientError, ClientResponseError, ClientSession
 
 from stocra.base_client import StocraBase
-from stocra.models import Block, ErrorHandler, StocraHTTPError, Transaction
+from stocra.models import Block, ErrorHandler, StocraHTTPError, Token, Transaction
 
 logger = logging.getLogger("stocra")
 
@@ -127,6 +129,17 @@ class Stocra(StocraBase):
             async for transaction in block_transactions:
                 yield block, transaction
 
+    async def get_tokens(self, blockchain: str) -> Dict[str, Token]:
+        if self._tokens.get(blockchain) is None:
+            await self._refresh_tokens(blockchain)
+
+        return self._tokens[blockchain]
+
+    async def scale_token_value(self, blockchain: str, contract_address: str, value: Decimal) -> Decimal:
+        tokens = await self.get_tokens(blockchain)
+        token = tokens[contract_address]
+        return value * token.scaling
+
     async def _acquire(self) -> None:
         if self._semaphore:
             await self._semaphore.acquire()
@@ -170,3 +183,7 @@ class Stocra(StocraBase):
                 return True
 
         return False
+
+    async def _refresh_tokens(self, blockchain: str) -> None:
+        tokens = await self._get(blockchain, "tokens")
+        self._tokens[blockchain] = {contract_address: Token(**token) for contract_address, token in tokens.items()}

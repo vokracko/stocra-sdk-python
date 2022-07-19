@@ -17,6 +17,8 @@ poetry add stocra --extras synchronous
 ### Usage
 ```python
 from concurrent.futures import ThreadPoolExecutor
+from decimal import Decimal
+
 from requests import Session
 from requests.adapters import HTTPAdapter
 from stocra.synchronous.client import Stocra
@@ -61,7 +63,13 @@ transaction = stocra_client.get_transaction(
 transactions = stocra_client.get_all_transactions_of_block(blockchain="bitcoin", block=block) 
 for transaction in transactions:
     print(transaction)
-
+    
+# scale token value
+value = stocra_client.scale_token_value(
+    "ethereum", 
+    "0xa49ded8b4607f958003e0d87d7f2d2f69bcadd41",  # USDT
+    Decimal("34500000000000000000000000") # raw value in token transfer
+)
 ```
 ## Asynchronous client
 ### Install
@@ -73,6 +81,8 @@ poetry add stocra --extras asynchronous
 ### Usage
 ```python
 from asyncio import Semaphore
+from decimal import Decimal
+
 from aiohttp import ClientSession
 from stocra.asynchronous.client import Stocra
 from stocra.asynchronous.error_handlers import retry_on_too_many_requests, retry_on_service_unavailable
@@ -112,6 +122,14 @@ transaction = await stocra_client.get_transaction(
 transactions = stocra_client.get_all_transactions_of_block(blockchain="bitcoin", block=block)
 async for transaction in transactions:
     print(transaction)
+
+# scale token value
+value = await stocra_client.scale_token_value(
+    "ethereum", 
+    "0xa49ded8b4607f958003e0d87d7f2d2f69bcadd41",  # USDT
+    Decimal("34500000000000000000000000") # raw value in token transfer
+)
+
 ```
 ## Error handlers
 Error handlers are functions that are called after a request fails. 
