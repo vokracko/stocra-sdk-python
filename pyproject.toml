@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "stocra"
-version = "0.1.5"
+version = "0.1.6"
 description = "Stocra.com python sdk"
 authors = ["Lukáš Vokráčko <lukas@vokracko.cz>"]
 license = "MIT"
