@@ -29,13 +29,13 @@ class Stocra(StocraBase):
 
     def __init__(
         self,
-        token: Optional[str] = None,
+        api_key: Optional[str] = None,
         session: Optional[ClientSession] = None,
         semaphore: Optional[Semaphore] = None,
         error_handlers: Optional[List[ErrorHandler]] = None,
     ):
         super().__init__(
-            token=token,
+            api_key=api_key,
             error_handlers=error_handlers,
         )
 

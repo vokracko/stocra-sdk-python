@@ -26,7 +26,7 @@ adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
 session = Session()
 session.mount('https://', adapter)
 stocra_client = Stocra(
-    token="<token>", # optional
+    api_key="<api-key>", # optional
     session=session, # optional
     executor=ThreadPoolExecutor(), # optional
     error_handlers=[ 
@@ -79,7 +79,7 @@ from stocra.asynchronous.error_handlers import retry_on_too_many_requests, retry
 
 session = ClientSession()
 stocra_client = Stocra(
-    token="<token>", # optional
+    api_key="<api-key>", # optional
     session=session, # optional
     semaphore=Semaphore(50), # optional
     error_handlers=[

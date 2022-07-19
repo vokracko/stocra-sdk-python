@@ -18,13 +18,13 @@ class Stocra(StocraBase):
 
     def __init__(
         self,
-        token: Optional[str] = None,
+        api_key: Optional[str] = None,
         session: Optional[Session] = None,
         executor: Optional[Executor] = None,
         error_handlers: Optional[List[ErrorHandler]] = None,
     ):
         super().__init__(
-            token=token,
+            api_key=api_key,
             error_handlers=error_handlers,
         )
         self._session = session or Session()
