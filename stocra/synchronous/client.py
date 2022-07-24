@@ -121,12 +121,22 @@ class Stocra(StocraBase):
         blockchain: str,
         start_block_hash_or_height: Union[int, str] = "latest",
         sleep_interval_seconds: float = 10,
+        load_n_blocks_ahead: Optional[int] = None,
     ) -> Iterable[Tuple[Block, Transaction]]:
-        new_blocks = self.stream_new_blocks(
-            blockchain=blockchain,
-            start_block_hash_or_height=start_block_hash_or_height,
-            sleep_interval_seconds=sleep_interval_seconds,
-        )
+        if load_n_blocks_ahead:
+            new_blocks = self.stream_new_blocks_ahead(
+                blockchain=blockchain,
+                start_block_hash_or_height=start_block_hash_or_height,
+                sleep_interval_seconds=sleep_interval_seconds,
+                n_blocks_ahead=load_n_blocks_ahead,
+            )
+        else:
+            new_blocks = self.stream_new_blocks(
+                blockchain=blockchain,
+                start_block_hash_or_height=start_block_hash_or_height,
+                sleep_interval_seconds=sleep_interval_seconds,
+            )
+
         for block in new_blocks:
             block_transactions = self.get_all_transactions_of_block(blockchain=blockchain, block=block)
             for transaction in block_transactions:

@@ -50,11 +50,14 @@ for block in stocra_client.stream_new_blocks(blockchain="ethereum"):
 
 # stream new blocks, load new blocks in the background for faster processing. 
 # Works only if executor was provided during instantiation.
-for block in stocra_client.stream_new_blocks_ahead(blockchain="ethereum"):
+for block in stocra_client.stream_new_blocks_ahead(blockchain="ethereum", n_blocks_ahead=5):
     print(block)
     
 # stream new transactions
-for block, transaction in stocra_client.stream_new_transactions(blockchain="ethereum"):
+for block, transaction in stocra_client.stream_new_transactions(
+    blockchain="ethereum", 
+    load_n_blocks_ahead=5,  # works only with executor 
+):
     print(block.height, transaction.hash)
     
 # get one block
@@ -112,7 +115,10 @@ stocra_client = Stocra(
     ] # optional
 )
 # stream new transactions
-async for block, transaction in stocra_client.stream_new_transactions(blockchain="ethereum"):
+async for block, transaction in stocra_client.stream_new_transactions(
+    blockchain="ethereum", 
+    load_n_blocks_ahead=5
+):
     print(block.height, transaction.hash)
 
 # stream new blocks and always load next 5 blocks in the background.
