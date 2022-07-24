@@ -22,7 +22,12 @@ from decimal import Decimal
 from requests import Session
 from requests.adapters import HTTPAdapter
 from stocra.synchronous.client import Stocra
-from stocra.synchronous.error_handlers import retry_on_too_many_requests, retry_on_service_unavailable
+from stocra.synchronous.error_handlers import (
+  retry_on_too_many_requests, 
+  retry_on_service_unavailable,
+  retry_on_bad_gateway,
+  retry_on_timeout_error,
+)
 
 adapter = HTTPAdapter(pool_connections=100, pool_maxsize=100)
 session = Session()
@@ -34,6 +39,8 @@ stocra_client = Stocra(
     error_handlers=[ 
         retry_on_service_unavailable,
         retry_on_too_many_requests,
+        retry_on_bad_gateway,
+        retry_on_timeout_error,
     ] # optional
 )
 
@@ -85,7 +92,12 @@ from decimal import Decimal
 
 from aiohttp import ClientSession
 from stocra.asynchronous.client import Stocra
-from stocra.asynchronous.error_handlers import retry_on_too_many_requests, retry_on_service_unavailable
+from stocra.asynchronous.error_handlers import (
+  retry_on_too_many_requests, 
+  retry_on_service_unavailable,
+  retry_on_bad_gateway,
+  retry_on_timeout_error,
+)
 
 session = ClientSession()
 stocra_client = Stocra(
@@ -95,6 +107,8 @@ stocra_client = Stocra(
     error_handlers=[
         retry_on_service_unavailable,
         retry_on_too_many_requests,
+        retry_on_bad_gateway,
+        retry_on_timeout_error,
     ] # optional
 )
 # stream new transactions

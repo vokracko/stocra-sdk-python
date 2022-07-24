@@ -166,7 +166,7 @@ class Stocra(StocraBase):
                     headers=self.headers,
                 )
                 return cast(dict, await response.json())
-            except ClientError as exception:
+            except (ClientError, asyncio.TimeoutError) as exception:
                 error = StocraHTTPError(endpoint=endpoint, iteration=iteration, exception=exception)
                 if await self._should_continue(error):
                     continue

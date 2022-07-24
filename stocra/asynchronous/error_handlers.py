@@ -49,3 +49,28 @@ async def retry_on_too_many_requests(error: StocraHTTPError) -> bool:
     retry_after = headers.get("Retry-After", 0)
     await asyncio.sleep(int(retry_after))
     return True
+
+
+async def retry_on_bad_gateway(error: StocraHTTPError) -> bool:
+    if not isinstance(error.exception, ClientResponseError):
+        return False
+
+    if error.exception.status != 502:
+        return False
+
+    if error.iteration > 10:
+        return False
+
+    await asyncio.sleep(calculate_sleep(error.iteration))
+    return True
+
+
+async def retry_on_timeout_error(error: StocraHTTPError) -> bool:
+    if not isinstance(error.exception, asyncio.TimeoutError):
+        return False
+
+    if error.iteration > 10:
+        return False
+
+    await asyncio.sleep(calculate_sleep(error.iteration))
+    return True

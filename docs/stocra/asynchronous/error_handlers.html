@@ -39,6 +39,12 @@
             <li>
                     <a class="function" href="#retry_on_too_many_requests">retry_on_too_many_requests</a>
             </li>
+            <li>
+                    <a class="function" href="#retry_on_bad_gateway">retry_on_bad_gateway</a>
+            </li>
+            <li>
+                    <a class="function" href="#retry_on_timeout_error">retry_on_timeout_error</a>
+            </li>
     </ul>
 
 
@@ -111,6 +117,31 @@
 </span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>    <span class="n">retry_after</span> <span class="o">=</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Retry-After&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 </span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">retry_after</span><span class="p">))</span>
 </span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>    <span class="k">return</span> <span class="kc">True</span>
+</span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a>
+</span><span id="L-53"><a href="#L-53"><span class="linenos">53</span></a>
+</span><span id="L-54"><a href="#L-54"><span class="linenos">54</span></a><span class="k">async</span> <span class="k">def</span> <span class="nf">retry_on_bad_gateway</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="n">StocraHTTPError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="L-55"><a href="#L-55"><span class="linenos">55</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">exception</span><span class="p">,</span> <span class="n">ClientResponseError</span><span class="p">):</span>
+</span><span id="L-56"><a href="#L-56"><span class="linenos">56</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>
+</span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>    <span class="k">if</span> <span class="n">error</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="mi">502</span><span class="p">:</span>
+</span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a>
+</span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>    <span class="k">if</span> <span class="n">error</span><span class="o">.</span><span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+</span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>
+</span><span id="L-64"><a href="#L-64"><span class="linenos">64</span></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">calculate_sleep</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">iteration</span><span class="p">))</span>
+</span><span id="L-65"><a href="#L-65"><span class="linenos">65</span></a>    <span class="k">return</span> <span class="kc">True</span>
+</span><span id="L-66"><a href="#L-66"><span class="linenos">66</span></a>
+</span><span id="L-67"><a href="#L-67"><span class="linenos">67</span></a>
+</span><span id="L-68"><a href="#L-68"><span class="linenos">68</span></a><span class="k">async</span> <span class="k">def</span> <span class="nf">retry_on_timeout_error</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="n">StocraHTTPError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">exception</span><span class="p">,</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">):</span>
+</span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a>    <span class="k">if</span> <span class="n">error</span><span class="o">.</span><span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+</span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>
+</span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">calculate_sleep</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">iteration</span><span class="p">))</span>
+</span><span id="L-76"><a href="#L-76"><span class="linenos">76</span></a>    <span class="k">return</span> <span class="kc">True</span>
 </span></pre></div>
 
 
@@ -199,6 +230,61 @@
 </span><span id="retry_on_too_many_requests-50"><a href="#retry_on_too_many_requests-50"><span class="linenos">50</span></a>    <span class="n">retry_after</span> <span class="o">=</span> <span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;Retry-After&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 </span><span id="retry_on_too_many_requests-51"><a href="#retry_on_too_many_requests-51"><span class="linenos">51</span></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">retry_after</span><span class="p">))</span>
 </span><span id="retry_on_too_many_requests-52"><a href="#retry_on_too_many_requests-52"><span class="linenos">52</span></a>    <span class="k">return</span> <span class="kc">True</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="retry_on_bad_gateway">
+                            <input id="retry_on_bad_gateway-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">async def</span>
+        <span class="name">retry_on_bad_gateway</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">error</span><span class="p">:</span> <span class="n"><a href="../models.html#StocraHTTPError">stocra.models.StocraHTTPError</a></span></span><span class="return-annotation">) -> <span class="nb">bool</span>:</span></span>
+
+                <label class="view-source-button" for="retry_on_bad_gateway-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#retry_on_bad_gateway"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="retry_on_bad_gateway-55"><a href="#retry_on_bad_gateway-55"><span class="linenos">55</span></a><span class="k">async</span> <span class="k">def</span> <span class="nf">retry_on_bad_gateway</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="n">StocraHTTPError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="retry_on_bad_gateway-56"><a href="#retry_on_bad_gateway-56"><span class="linenos">56</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">exception</span><span class="p">,</span> <span class="n">ClientResponseError</span><span class="p">):</span>
+</span><span id="retry_on_bad_gateway-57"><a href="#retry_on_bad_gateway-57"><span class="linenos">57</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="retry_on_bad_gateway-58"><a href="#retry_on_bad_gateway-58"><span class="linenos">58</span></a>
+</span><span id="retry_on_bad_gateway-59"><a href="#retry_on_bad_gateway-59"><span class="linenos">59</span></a>    <span class="k">if</span> <span class="n">error</span><span class="o">.</span><span class="n">exception</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="mi">502</span><span class="p">:</span>
+</span><span id="retry_on_bad_gateway-60"><a href="#retry_on_bad_gateway-60"><span class="linenos">60</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="retry_on_bad_gateway-61"><a href="#retry_on_bad_gateway-61"><span class="linenos">61</span></a>
+</span><span id="retry_on_bad_gateway-62"><a href="#retry_on_bad_gateway-62"><span class="linenos">62</span></a>    <span class="k">if</span> <span class="n">error</span><span class="o">.</span><span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+</span><span id="retry_on_bad_gateway-63"><a href="#retry_on_bad_gateway-63"><span class="linenos">63</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="retry_on_bad_gateway-64"><a href="#retry_on_bad_gateway-64"><span class="linenos">64</span></a>
+</span><span id="retry_on_bad_gateway-65"><a href="#retry_on_bad_gateway-65"><span class="linenos">65</span></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">calculate_sleep</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">iteration</span><span class="p">))</span>
+</span><span id="retry_on_bad_gateway-66"><a href="#retry_on_bad_gateway-66"><span class="linenos">66</span></a>    <span class="k">return</span> <span class="kc">True</span>
+</span></pre></div>
+
+
+    
+
+                </section>
+                <section id="retry_on_timeout_error">
+                            <input id="retry_on_timeout_error-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr function">
+            
+        <span class="def">async def</span>
+        <span class="name">retry_on_timeout_error</span><span class="signature pdoc-code condensed">(<span class="param"><span class="n">error</span><span class="p">:</span> <span class="n"><a href="../models.html#StocraHTTPError">stocra.models.StocraHTTPError</a></span></span><span class="return-annotation">) -> <span class="nb">bool</span>:</span></span>
+
+                <label class="view-source-button" for="retry_on_timeout_error-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#retry_on_timeout_error"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="retry_on_timeout_error-69"><a href="#retry_on_timeout_error-69"><span class="linenos">69</span></a><span class="k">async</span> <span class="k">def</span> <span class="nf">retry_on_timeout_error</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="n">StocraHTTPError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="retry_on_timeout_error-70"><a href="#retry_on_timeout_error-70"><span class="linenos">70</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">exception</span><span class="p">,</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">):</span>
+</span><span id="retry_on_timeout_error-71"><a href="#retry_on_timeout_error-71"><span class="linenos">71</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="retry_on_timeout_error-72"><a href="#retry_on_timeout_error-72"><span class="linenos">72</span></a>
+</span><span id="retry_on_timeout_error-73"><a href="#retry_on_timeout_error-73"><span class="linenos">73</span></a>    <span class="k">if</span> <span class="n">error</span><span class="o">.</span><span class="n">iteration</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="p">:</span>
+</span><span id="retry_on_timeout_error-74"><a href="#retry_on_timeout_error-74"><span class="linenos">74</span></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="retry_on_timeout_error-75"><a href="#retry_on_timeout_error-75"><span class="linenos">75</span></a>
+</span><span id="retry_on_timeout_error-76"><a href="#retry_on_timeout_error-76"><span class="linenos">76</span></a>    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">calculate_sleep</span><span class="p">(</span><span class="n">error</span><span class="o">.</span><span class="n">iteration</span><span class="p">))</span>
+</span><span id="retry_on_timeout_error-77"><a href="#retry_on_timeout_error-77"><span class="linenos">77</span></a>    <span class="k">return</span> <span class="kc">True</span>
 </span></pre></div>
 
 
