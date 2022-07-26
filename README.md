@@ -80,6 +80,7 @@ value = stocra_client.scale_token_value(
     "0xa49ded8b4607f958003e0d87d7f2d2f69bcadd41",  # USDT
     Decimal("34500000000000000000000000") # raw value in token transfer
 )
+print(value)
 ```
 ## Asynchronous client
 ### Install
@@ -149,7 +150,9 @@ value = await stocra_client.scale_token_value(
     "0xa49ded8b4607f958003e0d87d7f2d2f69bcadd41",  # USDT
     Decimal("34500000000000000000000000") # raw value in token transfer
 )
+print(value)
 
+await stocra_client.close() # close session
 ```
 ## Error handlers
 Error handlers are functions that are called after a request fails. 
