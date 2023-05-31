@@ -1,8 +1,8 @@
 # Stocra Python SDK
-- [SDK API documentation](https://stocra.github.io/sdk-python/)
-  - [Models](https://stocra.github.io/sdk-python/stocra/models.html)
-  - [Synchronous client](https://stocra.github.io/sdk-python/stocra/synchronous/client.html)
-  - [Asynchronous client](https://stocra.github.io/sdk-python/stocra/asynchronous/client.html)
+- [SDK API documentation](https://vokracko.github.io/stocra-sdk-python/)
+  - [Models](https://vokracko.github.io/stocra-sdk-python/stocra/models.html)
+  - [Synchronous client](https://vokracko.github.io/stocra-sdk-python/stocra/synchronous/client.html)
+  - [Asynchronous client](https://vokracko.github.io/stocra-sdk-python/stocra/asynchronous/client.html)
 - [Using synchronous client](#synchronous-client)
 - [Using asynchronous client](#asynchronous-client)
 - [Error handlers](#error-handlers)
@@ -156,11 +156,11 @@ await stocra_client.close() # close session
 ```
 ## Error handlers
 Error handlers are functions that are called after a request fails. 
-They receive single argument, [StocraHTTPError](https://stocra.github.io/sdk-python/stocra/models.html#StocraHTTPError) 
+They receive single argument, [StocraHTTPError](https://vokracko.github.io/stocra-sdk-python/stocra/models.html#StocraHTTPError) 
 and return boolean indicating whether to retry request (`True`) or raise (`False`).
 
 Error handler signature: `ErrorHandler = Callable[[StocraHTTPError], Union[bool, Awaitable[bool]]]`
 
 No errors handlers are used by default although there are two already defined for both sync and async version: 
-- synchronous error handlers: [stocra.synchronous.error_handlers](https://stocra.github.io/sdk-python/stocra/synchronous/error_handlers.html)
-- of asynchronous error handlers: [stocra.asynchronous.error_handlers](https://stocra.github.io/sdk-python/stocra/asynchronous/error_handlers.html)
+- synchronous error handlers: [stocra.synchronous.error_handlers](https://vokracko.github.io/stocra-sdk-python/stocra/synchronous/error_handlers.html)
+- of asynchronous error handlers: [stocra.asynchronous.error_handlers](https://vokracko.github.io/stocra-sdk-python/stocra/asynchronous/error_handlers.html)
